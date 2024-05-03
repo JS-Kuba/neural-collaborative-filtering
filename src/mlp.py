@@ -2,6 +2,7 @@ import torch
 from gmf import GMF
 from engine import Engine
 from utils import use_cuda, resume_checkpoint
+from torch import nn
 
 
 class MLP(torch.nn.Module):
@@ -21,6 +22,11 @@ class MLP(torch.nn.Module):
 
         self.affine_output = torch.nn.Linear(in_features=config['layers'][-1], out_features=1)
         self.logistic = torch.nn.Sigmoid()
+        # Initialize model parameters with a Gaussian distribution (with a mean of 0 and standard deviation of 0.01)
+        for sm in self.modules():
+            if isinstance(sm, (nn.Embedding, nn.Linear)):
+                print(sm)
+                torch.nn.init.normal_(sm.weight.data, 0.0, 0.01)
 
     def forward(self, user_indices, item_indices):
         user_embedding = self.embedding_user(user_indices)
