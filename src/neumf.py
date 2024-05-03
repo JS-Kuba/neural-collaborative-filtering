@@ -28,10 +28,11 @@ class NeuMF(torch.nn.Module):
         self.logistic = torch.nn.Sigmoid()
 
         # Initialize model parameters with a Gaussian distribution (with a mean of 0 and standard deviation of 0.01)
-        for sm in self.modules():
-            if isinstance(sm, (nn.Embedding, nn.Linear)):
-                print(sm)
-                torch.nn.init.normal_(sm.weight.data, 0.0, 0.01)
+        if config['weight_init_gaussian']:
+            for sm in self.modules():
+                if isinstance(sm, (nn.Embedding, nn.Linear)):
+                    print(sm)
+                    torch.nn.init.normal_(sm.weight.data, 0.0, 0.01)
 
     def forward(self, user_indices, item_indices):
         user_embedding_mlp = self.embedding_user_mlp(user_indices)
