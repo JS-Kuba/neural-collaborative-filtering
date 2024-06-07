@@ -67,6 +67,7 @@ class Engine(object):
                 test_scores.append(self.model(test_users, test_items))
             for i in range(0, len(negative_users), bs):
                 negative_scores.append(self.model(negative_users, negative_items))
+
             test_scores = torch.concatenate(test_scores, dim=0)
             negative_scores = torch.concatenate(negative_scores, dim=0)
 
