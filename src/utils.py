@@ -1,11 +1,15 @@
 """
     Some handy functions for pytroch model training ...
 """
+import os
 import torch
 
 
 # Checkpoints
 def save_checkpoint(model, model_dir):
+    dir = os.path.dirname(model_dir)
+    if not os.path.exists(dir):
+        os.makedirs(dir)
     torch.save(model.state_dict(), model_dir)
 
 
