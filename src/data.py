@@ -58,7 +58,7 @@ class SampleGenerator(object):
     def _binarize(self, ratings):
         """binarize into 0 or 1, imlicit feedback"""
         ratings = deepcopy(ratings)
-        ratings['rating'][ratings['rating'] > 0] = 1.0
+        ratings.loc[ratings['rating'] > 0, 'rating'] = 1.0 # replace ratings['rating'][ratings['rating'] > 0] = 1.0
         return ratings
 
     def _split_loo(self, ratings):
@@ -74,14 +74,14 @@ class SampleGenerator(object):
         interact_status = ratings.groupby('userId')['itemId'].apply(set).reset_index().rename(
             columns={'itemId': 'interacted_items'})
         interact_status['negative_items'] = interact_status['interacted_items'].apply(lambda x: self.item_pool - x)
-        interact_status['negative_samples'] = interact_status['negative_items'].apply(lambda x: random.sample(x, 99))
+        interact_status['negative_samples'] = interact_status['negative_items'].apply(lambda x: random.sample(list(x), 99))
         return interact_status[['userId', 'negative_items', 'negative_samples']]
 
     def instance_a_train_loader(self, num_negatives, batch_size):
         """instance train loader for one training epoch"""
         users, items, ratings = [], [], []
         train_ratings = pd.merge(self.train_ratings, self.negatives[['userId', 'negative_items']], on='userId')
-        train_ratings['negatives'] = train_ratings['negative_items'].apply(lambda x: random.sample(x, num_negatives))
+        train_ratings['negatives'] = train_ratings['negative_items'].apply(lambda x: random.sample(list(x), num_negatives))
         for row in train_ratings.itertuples():
             users.append(int(row.userId))
             items.append(int(row.itemId))
