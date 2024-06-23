@@ -1,7 +1,7 @@
 import torch
 from torch.autograd import Variable
+from tqdm import tqdm
 from tensorboardX import SummaryWriter
-
 from utils import save_checkpoint, use_optimizer
 from metrics import MetronAtK
 
@@ -60,16 +60,26 @@ class Engine(object):
                 negative_users = negative_users.cuda()
                 negative_items = negative_items.cuda()
 
+        if self.config['use_bachify_eval'] == False:    
+            test_scores = self.model(test_users, test_items)
+            negative_scores = self.model(negative_users, negative_items)
+        else:
             test_scores = []
             negative_scores = []
             bs = self.config['batch_size']
-            for i in range(0, len(test_users), bs):
-                test_scores.append(self.model(test_users, test_items))
-            for i in range(0, len(negative_users), bs):
-                negative_scores.append(self.model(negative_users, negative_items))
-
+            for start_idx in range(0, len(test_users), bs):
+                end_idx = min(start_idx + bs, len(test_users))
+                batch_test_users = test_users[start_idx:end_idx]
+                batch_test_items = test_items[start_idx:end_idx]
+                test_scores.append(self.model(batch_test_users, batch_test_items))
+            for start_idx in tqdm(range(0, len(negative_users), bs)):
+                end_idx = min(start_idx + bs, len(negative_users))
+                batch_negative_users = negative_users[start_idx:end_idx]
+                batch_negative_items = negative_items[start_idx:end_idx]
+                negative_scores.append(self.model(batch_negative_users, batch_negative_items))
             test_scores = torch.concatenate(test_scores, dim=0)
             negative_scores = torch.concatenate(negative_scores, dim=0)
+
 
             if self.config['use_cuda'] is True:
                 test_users = test_users.cpu()

@@ -23,7 +23,8 @@ gmf_config = {'alias': 'gmf_factor8neg4-implict',
               'num_negative': 4,
               'l2_regularization': 0,  # 0.01
               'weight_init_gaussian': True,
-              'use_cuda': True,
+              'use_cuda': False,
+              'use_bachify_eval': False,
               'device_id': 0,
               'model_dir': 'checkpoints/{}_Epoch{}_HR{:.4f}_NDCG{:.4f}.model'}
 
@@ -39,7 +40,8 @@ mlp_config = {'alias': 'mlp_factor8neg4_bz256_166432168_pretrain_reg_0.0000001',
               'layers': [16, 64, 32, 16, 8],  # layers[0] is the concat of latent user vector & latent item vector
               'l2_regularization': 0.0000001,  # MLP model is sensitive to hyper params
               'weight_init_gaussian': True,
-              'use_cuda': True,
+              'use_cuda': False,
+              'use_bachify_eval': False,
               'device_id': 0,
               'pretrain': False,
               'pretrain_mf': 'checkpoints/{}'.format('gmf_factor8neg4_Epoch100_HR0.6391_NDCG0.2852.model'),
@@ -58,7 +60,8 @@ neumf_config = {'alias': 'neumf_factor8neg4',
                 'layers': [16, 64, 32, 16, 8],  # layers[0] is the concat of latent user vector & latent item vector
                 'l2_regularization': 0.0000001,
                 'weight_init_gaussian': True,
-                'use_cuda': True,
+                'use_cuda': False,
+                'use_bachify_eval': True,
                 'device_id': 0,
                 'pretrain': False,
                 'pretrain_mf': 'checkpoints/{}'.format('gmf_factor8neg4_Epoch100_HR0.6391_NDCG0.2852.model'),

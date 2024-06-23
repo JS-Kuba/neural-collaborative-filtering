@@ -3,7 +3,13 @@ Neural collaborative filtering(NCF), is a deep learning based framework for maki
 
 > He, Xiangnan, et al. "Neural collaborative filtering." Proceedings of the 26th International Conference on World Wide Web. International World Wide Web Conferences Steering Committee, 2017.
 
-The authors of NCF actually published [a nice implementation](https://github.com/hexiangnan/neural_collaborative_filtering) written in tensorflow(keras). This repo instead provides my implementation written in **pytorch**. I hope it would be helpful to pytorch fans. Have fun playing with it !
+The authors of NCF actually published [a nice implementation](https://github.com/hexiangnan/neural_collaborative_filtering) written in tensorflow(keras). This repo instead provides my implementation written in **pytorch**. I hope it would be helpful to pytorch fans. Have fun playing with it!
+
+## Run!
+```bash
+python train.py
+```
+modify the config in `train.py` to change the hyper-parameters.
 
 ## Dataset
 [The Movielens 1M Dataset](http://grouplens.org/datasets/movielens/1m/) is used to test the repo.
@@ -59,8 +65,9 @@ MLP network size = [16, 64, 32, 16, 8]
 Ratings are set to 1 (interacted) or 0 (uninteracted). Train from scratch.
 ![binarize](./res/figure/binarize.png) 
 
-### Pytorch Versions
-The repo works under torch 1.0. You can find the old versions working under torch 0.2 and 0.4 in **tags**.
+## CPU training
+The code can also run on CPUs and actually pretty fast for small datasets.
+## Requirements
+The repo works under torch 1.0 (gpu&cpu) and torch 2.3.1(cpu, gpu yet to be tested). You can find the old versions in **tags**.
 
-### TODO
-- Batchify the test data to handle large dataset.
+
