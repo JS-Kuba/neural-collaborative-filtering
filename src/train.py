@@ -48,19 +48,20 @@ mlp_config = {'alias': 'mlp_factor8neg4_bz256_166432168_pretrain_reg_0.0000001',
               'model_dir': 'checkpoints/{}_Epoch{}_HR{:.4f}_NDCG{:.4f}.model'}
 
 neumf_config = {'alias': 'neumf_factor8neg4',
-                'num_epoch': 200,
-                'batch_size': 1024,
+                'num_epoch': 20,
+                'batch_size': 256,
                 'optimizer': 'adam',
                 'adam_lr': 1e-3,
                 'num_users': 6040,
                 'num_items': 3706,
-                'latent_dim_mf': 8,
-                'latent_dim_mlp': 8,
+                'latent_dim_mf': 16,
+                'latent_dim_mlp': 16,
                 'num_negative': 4,
-                'layers': [16, 64, 32, 16, 8],  # layers[0] is the concat of latent user vector & latent item vector
+                # qst layer should be 2x latent_dim_mlp
+                'layers': [32, 64, 32, 16, 8],  # layers[0] is the concat of latent user vector & latent item vector
                 'l2_regularization': 0.0000001,
                 'weight_init_gaussian': True,
-                'use_cuda': False,
+                'use_cuda': True,
                 'use_bachify_eval': True,
                 'device_id': 0,
                 'pretrain': False,
