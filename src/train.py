@@ -30,7 +30,7 @@ for factors in factors_list:
                     'l2_regularization': 0,  # 0.01
                     'weight_init_gaussian': True,
                     'use_cuda': False,
-                    'use_bachify_eval': False,
+                    'use_bachify_eval': True,
                     'device_id': 0,
                     'model_dir': 'checkpoints/{}_Epoch{}_HR{:.4f}_NDCG{:.4f}.model'}
 
@@ -81,7 +81,7 @@ for factors in factors_list:
         # engine = GMFEngine(config)
         # config = mlp_config
         # engine = MLPEngine(config)
-        config = neumf_config
+        config = gmf_config
         engine = NeuMFEngine(config)
 
         logging=True
