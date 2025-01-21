@@ -86,7 +86,8 @@ for factors in factors_list:
 
         logging=True
         if logging:
-            wandb.init(project="ncf-project", config=config, name=config["alias"])
+            notes = ""
+            wandb.init(project="ncf-project", config=config, name=f'{config["alias"]}{notes}')
 
         # Load Data
         ml1m_dir = 'data/ml-1m/ratings.dat'
