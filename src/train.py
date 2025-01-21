@@ -84,7 +84,7 @@ for factors in factors_list:
         # config = neumf_config
         # engine = NeuMFEngine(config)
 
-        print(f"Starting training with config: {gmf_config["alias"]}. Current number of factors: {factors}")
+        print(f"Starting training with config: {gmf_config['alias']}. Current number of factors: {factors}")
 
         logging=True
         if logging:
