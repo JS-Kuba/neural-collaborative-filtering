@@ -7,7 +7,7 @@ from data import SampleGenerator
 import wandb
 import time
 
-factors_list = [8]
+factors_list = [16, 32, 64]
 
 for factors in factors_list:
     try:
@@ -54,7 +54,7 @@ for factors in factors_list:
                     'model_dir': 'checkpoints/{}_Epoch{}_HR{:.4f}_NDCG{:.4f}.model'}
 
         neumf_config = {'alias': f'neumf_factors_{factors}',
-                        'num_epoch': 1,
+                        'num_epoch': 20,
                         'batch_size': 256,
                         'optimizer': 'adam',
                         'adam_lr': 1e-3,
