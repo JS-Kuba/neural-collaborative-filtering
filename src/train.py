@@ -7,7 +7,7 @@ from data import SampleGenerator
 import wandb
 import time
 
-factors_list = [8, 16, 32, 64]
+factors_list = [32, 64]
 
 for factors in factors_list:
     try:
