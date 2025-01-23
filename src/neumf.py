@@ -1,9 +1,21 @@
 import torch
+from torch import nn
 from gmf import GMF
 from mlp import MLP
 from engine import Engine
 from utils import use_cuda, resume_checkpoint
-from torch import nn
+
+
+class SelfAttentionLayer(nn.Module):
+    def __init__(self, embed_dim, num_heads):
+        super(SelfAttentionLayer, self).__init__()
+        self.self_attention = nn.MultiheadAttention(embed_dim, num_heads)
+        self.layer_norm = nn.LayerNorm(embed_dim)
+
+    def forward(self, x):
+        # x: [batch_size, seq_len, embed_dim]
+        attn_output, _ = self.self_attention(x, x, x)  # Self-attention
+        return self.layer_norm(x + attn_output)  # Add & Normalize
 
 
 class NeuMF(torch.nn.Module):
@@ -14,53 +26,68 @@ class NeuMF(torch.nn.Module):
         self.num_items = config['num_items']
         self.latent_dim_mf = config['latent_dim_mf']
         self.latent_dim_mlp = config['latent_dim_mlp']
+        self.num_attention_heads = config.get('num_attention_heads', 2)
 
-        self.embedding_user_mlp = torch.nn.Embedding(num_embeddings=self.num_users, embedding_dim=self.latent_dim_mlp)
-        self.embedding_item_mlp = torch.nn.Embedding(num_embeddings=self.num_items, embedding_dim=self.latent_dim_mlp)
-        self.embedding_user_mf = torch.nn.Embedding(num_embeddings=self.num_users, embedding_dim=self.latent_dim_mf)
-        self.embedding_item_mf = torch.nn.Embedding(num_embeddings=self.num_items, embedding_dim=self.latent_dim_mf)
+        # Embeddings for MLP and MF
+        self.embedding_user_mlp = nn.Embedding(self.num_users, self.latent_dim_mlp)
+        self.embedding_item_mlp = nn.Embedding(self.num_items, self.latent_dim_mlp)
+        self.embedding_user_mf = nn.Embedding(self.num_users, self.latent_dim_mf)
+        self.embedding_item_mf = nn.Embedding(self.num_items, self.latent_dim_mf)
 
-        self.fc_layers = torch.nn.ModuleList()
+        # Self-Attention Layer
+        self.self_attention = SelfAttentionLayer(self.latent_dim_mlp * 2, self.num_attention_heads)
+
+        # Fully Connected Layers for MLP
+        self.fc_layers = nn.ModuleList()
         for idx, (in_size, out_size) in enumerate(zip(config['layers'][:-1], config['layers'][1:])):
-            self.fc_layers.append(torch.nn.Linear(in_size, out_size))
+            self.fc_layers.append(nn.Linear(in_size, out_size))
 
-        self.affine_output = torch.nn.Linear(in_features=config['layers'][-1] + config['latent_dim_mf'], out_features=1)
-        self.logistic = torch.nn.Sigmoid()
+        # Output Layers
+        self.affine_output = nn.Linear(config['layers'][-1] + self.latent_dim_mf, 1)
+        self.logistic = nn.Sigmoid()
 
-        # Initialize model parameters with a Gaussian distribution (with a mean of 0 and standard deviation of 0.01)
+        # Initialize model parameters if specified
         if config['weight_init_gaussian']:
             for sm in self.modules():
                 if isinstance(sm, (nn.Embedding, nn.Linear)):
-                    print(sm)
                     torch.nn.init.normal_(sm.weight.data, 0.0, 0.01)
 
     def forward(self, user_indices, item_indices):
+        # User and item embeddings for MLP and MF
         user_embedding_mlp = self.embedding_user_mlp(user_indices)
         item_embedding_mlp = self.embedding_item_mlp(item_indices)
         user_embedding_mf = self.embedding_user_mf(user_indices)
         item_embedding_mf = self.embedding_item_mf(item_indices)
 
-        mlp_vector = torch.cat([user_embedding_mlp, item_embedding_mlp], dim=-1)  # the concat latent vector
-        mf_vector =torch.mul(user_embedding_mf, item_embedding_mf)
+        # Concatenate embeddings for MLP
+        mlp_vector = torch.cat([user_embedding_mlp, item_embedding_mlp], dim=-1)  # [batch_size, embed_dim*2]
 
-        for idx, _ in enumerate(range(len(self.fc_layers))):
-            mlp_vector = self.fc_layers[idx](mlp_vector)
-            mlp_vector = torch.nn.ReLU()(mlp_vector)
+        # Apply self-attention to MLP vector
+        mlp_vector = mlp_vector.unsqueeze(1)  # Add sequence dimension: [batch_size, 1, embed_dim*2]
+        mlp_vector = self.self_attention(mlp_vector)  # [batch_size, 1, embed_dim*2]
+        mlp_vector = mlp_vector.squeeze(1)  # Remove sequence dimension: [batch_size, embed_dim*2]
 
-        vector = torch.cat([mlp_vector, mf_vector], dim=-1)
+        # MLP layers
+        for layer in self.fc_layers:
+            mlp_vector = torch.nn.ReLU()(layer(mlp_vector))
+
+        # Element-wise product for GMF
+        mf_vector = torch.mul(user_embedding_mf, item_embedding_mf)
+
+        # Concatenate MLP and GMF vectors
+        vector = torch.cat([mlp_vector, mf_vector], dim=-1)  # [batch_size, final_dim]
+
+        # Predict rating
         logits = self.affine_output(vector)
         rating = self.logistic(logits)
         return rating
 
-    def init_weight(self):
-        pass
-
     def load_pretrain_weights(self):
-        """Loading weights from trained MLP model & GMF model"""
+        """Load pretrained weights for MLP and GMF models"""
         config = self.config
         config['latent_dim'] = config['latent_dim_mlp']
         mlp_model = MLP(config)
-        if config['use_cuda'] is True:
+        if config['use_cuda']:
             mlp_model.cuda()
         resume_checkpoint(mlp_model, model_dir=config['pretrain_mlp'], device_id=config['device_id'])
 
@@ -71,21 +98,23 @@ class NeuMF(torch.nn.Module):
 
         config['latent_dim'] = config['latent_dim_mf']
         gmf_model = GMF(config)
-        if config['use_cuda'] is True:
+        if config['use_cuda']:
             gmf_model.cuda()
         resume_checkpoint(gmf_model, model_dir=config['pretrain_mf'], device_id=config['device_id'])
+
         self.embedding_user_mf.weight.data = gmf_model.embedding_user.weight.data
         self.embedding_item_mf.weight.data = gmf_model.embedding_item.weight.data
 
-        self.affine_output.weight.data = 0.5 * torch.cat([mlp_model.affine_output.weight.data, gmf_model.affine_output.weight.data], dim=-1)
+        self.affine_output.weight.data = 0.5 * torch.cat([mlp_model.affine_output.weight.data,
+                                                          gmf_model.affine_output.weight.data], dim=-1)
         self.affine_output.bias.data = 0.5 * (mlp_model.affine_output.bias.data + gmf_model.affine_output.bias.data)
 
 
 class NeuMFEngine(Engine):
-    """Engine for training & evaluating GMF model"""
+    """Engine for training & evaluating NeuMF model"""
     def __init__(self, config):
         self.model = NeuMF(config)
-        if config['use_cuda'] is True:
+        if config['use_cuda']:
             use_cuda(True, config['device_id'])
             self.model.cuda()
         super(NeuMFEngine, self).__init__(config)

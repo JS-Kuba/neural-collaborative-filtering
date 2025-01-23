@@ -7,7 +7,7 @@ from data import SampleGenerator
 import wandb
 import time
 
-factors_list = [64]
+factors_list = [8, 16, 32, 64]
 
 for factors in factors_list:
     try:
@@ -77,12 +77,12 @@ for factors in factors_list:
                         }
 
         # Specify the exact model
-        config = gmf_config
-        engine = GMFEngine(config)
+        # config = gmf_config
+        # engine = GMFEngine(config)
         # config = mlp_config
         # engine = MLPEngine(config)
-        # config = neumf_config
-        # engine = NeuMFEngine(config)
+        config = neumf_config
+        engine = NeuMFEngine(config)
 
         print(f"Starting training with config: {gmf_config['alias']}. Current number of factors: {factors}")
 
