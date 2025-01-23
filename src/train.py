@@ -2,12 +2,13 @@ import pandas as pd
 import numpy as np
 from gmf import GMFEngine
 from mlp import MLPEngine
+from mlp_attn import MLPAttnEngine
 from neumf import NeuMFEngine
 from data import SampleGenerator
 import wandb
 import time
 
-factors_list = [8, 16, 32, 64]
+factors_list = [8, 16]
 
 for factors in factors_list:
     try:
@@ -46,8 +47,8 @@ for factors in factors_list:
                     'layers': [2*factors, 32, 16, 8],  # layers[0] is the concat of latent user vector & latent item vector
                     'l2_regularization': 0.0000001,  # MLP model is sensitive to hyper params
                     'weight_init_gaussian': True,
-                    'use_cuda': False,
-                    'use_bachify_eval': False,
+                    'use_cuda': True,
+                    'use_bachify_eval': True,
                     'device_id': 0,
                     'pretrain': False,
                     'pretrain_mf': 'checkpoints/{}'.format('gmf_factor8neg4_Epoch100_HR0.6391_NDCG0.2852.model'),
@@ -79,10 +80,11 @@ for factors in factors_list:
         # Specify the exact model
         # config = gmf_config
         # engine = GMFEngine(config)
-        # config = mlp_config
+        config = mlp_config
         # engine = MLPEngine(config)
-        config = neumf_config
-        engine = NeuMFEngine(config)
+        # config = neumf_config
+        # engine = NeuMFEngine(config)
+        engine = MLPAttnEngine(config)
 
         logging=True
         if logging:
