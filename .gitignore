@@ -5,3 +5,4 @@ src/runs
 src/checkpoints
 res/.ipynb_checkpoints
 wandb/
+*.pdf
