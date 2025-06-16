@@ -7,10 +7,12 @@ from utils import use_cuda, resume_checkpoint
 
 
 class SelfAttentionLayer(nn.Module):
-    def __init__(self, embed_dim, num_heads):
+    def __init__(self, embed_dim, num_heads, use_layer_norm):
         super(SelfAttentionLayer, self).__init__()
         self.self_attention = nn.MultiheadAttention(embed_dim, num_heads)
-        self.layer_norm = nn.LayerNorm(embed_dim)
+        self.use_layer_norm = use_layer_norm
+        if self.use_layer_norm:
+            self.layer_norm = nn.LayerNorm(embed_dim)
 
     def forward(self, x):
         # x: [batch_size, seq_len, embed_dim]
@@ -26,7 +28,8 @@ class NeuMF(torch.nn.Module):
         self.num_items = config['num_items']
         self.latent_dim_mf = config['latent_dim_mf']
         self.latent_dim_mlp = config['latent_dim_mlp']
-        self.num_attention_heads = config.get('num_attention_heads', 2)
+        self.num_attention_heads = config.get('attention_heads')
+        self.use_layer_norm = config.get('l_norm')
 
         # Embeddings for MLP and MF
         self.embedding_user_mlp = nn.Embedding(self.num_users, self.latent_dim_mlp)
@@ -35,7 +38,7 @@ class NeuMF(torch.nn.Module):
         self.embedding_item_mf = nn.Embedding(self.num_items, self.latent_dim_mf)
 
         # Self-Attention Layer
-        self.self_attention = SelfAttentionLayer(self.latent_dim_mlp * 2, self.num_attention_heads)
+        self.self_attention = SelfAttentionLayer(self.latent_dim_mlp * 2, self.num_attention_heads, self.use_layer_norm)
 
         # Fully Connected Layers for MLP
         self.fc_layers = nn.ModuleList()
