@@ -17,7 +17,10 @@ class SelfAttentionLayer(nn.Module):
     def forward(self, x):
         # x: [batch_size, seq_len, embed_dim]
         attn_output, _ = self.self_attention(x, x, x)  # Self-attention
-        return self.layer_norm(x + attn_output)  # Add & Normalize
+        if self.use_layer_norm:
+            return self.layer_norm(x + attn_output)
+        else:
+            return x + attn_output
 
 
 class NeuMF(torch.nn.Module):
